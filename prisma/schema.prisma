@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id String @id @default(uuid())
+  username String @unique
+  email String @unique
+  password String
+  email_confirmed Boolean @default(false)
+  email_confirmation_code String?
+  created_at DateTime @default(now())
+  last_logged DateTime?
+  show_last_logged Boolean @default(true)
+
+  user_info UserInfo? 
+  verification_code VerificationCodes?
+  jwt_tokens JwtTokens[]
+  owned_chats Chats[]
+  chats ChatMembers[]
+  messages Messages[]
+  forwarded_messages Messages[] @relation("Forwarded_Messages")
+  group_requsts GroupRequsts[]
+}
+
+model UserInfo {
+  user_id String @id
+  first_name String?
+  last_name String?
+  date_of_birth DateTime?
+  bio String?
+
+  user Users @relation(fields: [user_id], references: [id])
+}
+
+model VerificationCodes {
+  user_id String @id
+  code String?
+  expires_at DateTime?
+
+  user Users @relation(fields: [user_id], references: [id])
+}
+
+model JwtTokens {
+  id Int @id @default(autoincrement())
+  user_id String
+  token String
+  ip String
+  user_agent String
+
+  user Users @relation(fields: [user_id], references: [id])
+}
+
+model Chats {
+  id Int @id @default(autoincrement())
+  type ChatType @default(private)
+  owner_id String?
+  name String?
+  description String?
+  is_private Boolean?
+  created_at DateTime @default(now())
+
+  @@index([type])
+
+  owner Users? @relation(fields: [owner_id], references: [id])
+  members ChatMembers[]
+  messages Messages[]
+  group_requsts GroupRequsts[]
+}
+
+enum ChatType {
+  private
+  group
+  channel
+}
+
+model ChatMembers {
+  chat_id Int
+  user_id String
+  is_admin Boolean @default(false)
+  allow_notifications Boolean @default(true)
+
+  @@id([chat_id, user_id])
+  @@index([chat_id])
+  
+  chat Chats @relation(fields: [chat_id], references: [id])
+  user Users @relation(fields: [user_id], references: [id])
+}
+
+model Messages {
+  id Int @id @default(autoincrement())
+  chat_id Int
+  sender_id String
+  content String
+  is_readed Boolean @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  forwarded_from String?
+  reply_to Int?
+  comment_to Int?
+  allow_comments Boolean @default(false)
+
+  @@index([chat_id])
+  @@index([sender_id])
+  @@index([comment_to])
+
+  chat Chats @relation(fields: [chat_id], references: [id])
+  sender Users @relation(fields: [sender_id], references: [id])
+  forwarded Users? @relation("Forwarded_Messages", fields: [forwarded_from], references: [id])
+  
+  reply Messages? @relation("Replies", fields: [reply_to], references: [id])
+  replies Messages[] @relation("Replies")
+
+  comment Messages? @relation("Comments", fields: [comment_to], references: [id])
+  comments Messages[] @relation("Comments")
+}
+
+model GroupRequsts {
+  id Int @id @default(autoincrement())
+  chat_id Int
+  user_id String
+  status GroupRequstStatus @default(pending)
+
+  chat Chats @relation(fields: [chat_id], references: [id])
+  user Users @relation(fields: [user_id], references: [id])
+}
+
+enum  GroupRequstStatus {
+  pending
+  rejected
+  accepted
+}

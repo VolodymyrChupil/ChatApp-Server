@@ -12,6 +12,9 @@ import { ConfigModule } from "@nestjs/config"
 import { RegisterModule } from "./register/register.module"
 import { MailModule } from "./mail/mail.module"
 import { MailerModule } from "@nestjs-modules/mailer"
+import { AuthModule } from "./auth/auth.module"
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler"
+import { APP_GUARD } from "@nestjs/core"
 
 @Module({
   imports: [
@@ -20,9 +23,17 @@ import { MailerModule } from "@nestjs-modules/mailer"
     RegisterModule,
     MailModule,
     MailerModule.forRoot({ transport: process.env.EMAIL_TRANSPORT }),
+    AuthModule,
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

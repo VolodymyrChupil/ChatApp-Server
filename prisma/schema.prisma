@@ -15,9 +15,7 @@ model Users {
   email_confirmed Boolean @default(false)
   email_confirmation_code String?
   created_at DateTime @default(now())
-  last_logged DateTime?
-  show_last_logged Boolean @default(true)
-
+  
   user_info UserInfo? 
   verification_code VerificationCodes?
   jwt_tokens JwtTokens[]
@@ -34,6 +32,9 @@ model UserInfo {
   last_name String?
   date_of_birth DateTime?
   bio String?
+  online Boolean @default(false)
+  show_last_logged Boolean @default(true)
+  last_logged DateTime?
 
   user Users @relation(fields: [user_id], references: [id])
 }
@@ -53,6 +54,7 @@ model JwtTokens {
   ip String
   user_agent String
 
+  @@unique([user_id, token])
   user Users @relation(fields: [user_id], references: [id])
 }
 

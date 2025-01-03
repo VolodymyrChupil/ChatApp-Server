@@ -8,8 +8,10 @@ import {
 } from "@nestjs/common"
 import { RegisterService } from "./register.service"
 import { CreateUserDTO } from "./register.dto"
+import { Throttle } from "@nestjs/throttler"
 
 @Controller("register")
+@Throttle({ default: { limit: 5 } })
 export class RegisterController {
   constructor(private readonly registerService: RegisterService) {}
 

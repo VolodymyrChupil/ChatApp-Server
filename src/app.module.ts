@@ -15,6 +15,7 @@ import { MailerModule } from "@nestjs-modules/mailer"
 import { AuthModule } from "./auth/auth.module"
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler"
 import { APP_GUARD } from "@nestjs/core"
+import { JwtModule } from "@nestjs/jwt"
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { APP_GUARD } from "@nestjs/core"
     MailerModule.forRoot({ transport: process.env.EMAIL_TRANSPORT }),
     AuthModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    JwtModule,
   ],
   controllers: [AppController],
   providers: [

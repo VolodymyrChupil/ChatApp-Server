@@ -115,10 +115,7 @@ export class AuthService {
 
     const newRefreshToken = this.jwt.sign(
       { userId: foundUser.id },
-      {
-        secret: process.env.REFRESH_TOKEN,
-        expiresIn: "1d",
-      },
+      { secret: process.env.REFRESH_TOKEN, expiresIn: "1d" },
     )
 
     await this.prisma.jwtTokens.create({
@@ -138,5 +135,24 @@ export class AuthService {
     })
 
     return res.json({ accessToken })
+  }
+
+  async logout(req: Request, res: Response) {
+    if (!req.cookies?.jwt) {
+      return res.sendStatus(204)
+    }
+    const token = req.cookies.jwt
+    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true })
+
+    try {
+      const payload = await this.jwt.verifyAsync(token, {
+        secret: process.env.REFRESH_TOKEN,
+      })
+      await this.prisma.jwtTokens.delete({
+        where: { user_id_token: { user_id: payload.userId, token } },
+      })
+    } finally {
+      return res.sendStatus(204)
+    }
   }
 }

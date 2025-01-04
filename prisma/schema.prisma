@@ -55,6 +55,7 @@ model JwtTokens {
   user_agent String
 
   @@unique([user_id, token])
+  
   user Users @relation(fields: [user_id], references: [id])
 }
 

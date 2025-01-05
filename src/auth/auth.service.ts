@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   RequestTimeoutException,
   UnauthorizedException,
@@ -34,12 +35,12 @@ export class AuthService {
       where: { username },
     })
     if (!foundUser) {
-      throw new UnauthorizedException()
+      throw new UnauthorizedException("Invalid credentials")
     }
 
     const pwdMatch = await bcrypt.compare(password, foundUser.password)
     if (!pwdMatch) {
-      throw new UnauthorizedException()
+      throw new UnauthorizedException("Invalid credentials")
     }
 
     if (!foundUser.email_confirmed) {
@@ -75,7 +76,7 @@ export class AuthService {
     }
 
     if (foundUserVerificationCode.code !== verificationCode) {
-      throw new UnauthorizedException("Verification code not valid")
+      throw new UnauthorizedException("Invalid credentials")
     }
 
     await this.prisma.verificationCodes.update({
@@ -154,5 +155,58 @@ export class AuthService {
     } finally {
       return res.sendStatus(204)
     }
+  }
+
+  async refresh(req: Request, res: Response) {
+    if (!req.cookies?.jwt) {
+      return res.sendStatus(204)
+    }
+    const token = req.cookies.jwt
+    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true })
+
+    const payload = await this.jwt
+      .verifyAsync(token, { secret: process.env.REFRESH_TOKEN })
+      .catch(() => {
+        throw new ForbiddenException()
+      })
+
+    const foundUser = await this.prisma.users.findUnique({
+      where: { id: payload.userId },
+    })
+    if (!foundUser) {
+      throw new ForbiddenException()
+    }
+
+    await this.prisma.jwtTokens.delete({
+      where: { user_id_token: { user_id: foundUser.id, token } },
+    })
+
+    const accessToken = this.jwt.sign(
+      { userId: foundUser.id, username: foundUser.username },
+      { secret: process.env.ACCESS_TOKEN, expiresIn: "15m" },
+    )
+
+    const newRefreshToken = this.jwt.sign(
+      { userId: foundUser.id },
+      { secret: process.env.REFRESH_TOKEN, expiresIn: "1d" },
+    )
+
+    await this.prisma.jwtTokens.create({
+      data: {
+        user_id: foundUser.id,
+        token: newRefreshToken,
+        ip: req.ip,
+        user_agent: req.header("user-agent"),
+      },
+    })
+
+    res.cookie("jwt", newRefreshToken, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    })
+
+    return res.json({ accessToken })
   }
 }

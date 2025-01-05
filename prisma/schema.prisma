@@ -23,6 +23,8 @@ model Users {
   chats ChatMembers[]
   messages Messages[]
   forwarded_messages Messages[] @relation("Forwarded_Messages")
+  blocked_by BlockedUsers[] @relation("BlockedBy")
+  blocking BlockedUsers[] @relation("Blocking")
   group_requsts GroupRequsts[]
 }
 
@@ -121,6 +123,16 @@ model Messages {
 
   comment Messages? @relation("Comments", fields: [comment_to], references: [id])
   comments Messages[] @relation("Comments")
+}
+
+model BlockedUsers {
+  blocker_id String
+  blocked_id String
+
+  @@id([blocked_id, blocker_id])
+
+  blocker Users @relation("Blocking", fields: [blocker_id], references: [id])
+  blocked Users @relation("BlockedBy", fields: [blocked_id], references: [id])
 }
 
 model GroupRequsts {

@@ -18,4 +18,9 @@ export class AuthController {
   logout(@Req() req: Request, @Res() res: Response) {
     return this.authService.logout(req, res)
   }
+
+  @Get("refresh")
+  refresh(@Req() req: Request, @Res() res: Response) {
+    return this.authService.refresh(req, res)
+  }
 }

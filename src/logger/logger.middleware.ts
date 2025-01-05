@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware } from "@nestjs/common"
-import { NextFunction } from "express"
+import { Request, Response, NextFunction } from "express"
 import * as morgan from "morgan"
 import * as path from "path"
 import * as fs from "fs"

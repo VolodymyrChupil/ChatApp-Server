@@ -11,8 +11,8 @@ import { JwtService } from "@nestjs/jwt"
 import { LoginBody } from "./auth.interface"
 import { Request, Response } from "express"
 import * as bcrypt from "bcrypt"
-import { generateNumber } from "src/utils/generator"
-import { addMinutes, compareAsc } from "date-fns"
+import { generateRandomNumber } from "src/utils/random.generator"
+import { addMinutes, isAfter } from "date-fns"
 
 @Injectable()
 export class AuthService {
@@ -54,7 +54,7 @@ export class AuthService {
     }
 
     if (!verificationCode) {
-      const code = generateNumber(8)
+      const code = generateRandomNumber(8)
       const expires_at = addMinutes(new Date(), 5)
 
       await this.prisma.verificationCodes.update({
@@ -71,7 +71,7 @@ export class AuthService {
         where: { user_id: foundUser.id },
       })
 
-    if (compareAsc(new Date(), foundUserVerificationCode.expires_at) !== -1) {
+    if (isAfter(new Date(), foundUserVerificationCode.expires_at)) {
       throw new RequestTimeoutException("Verification code expired")
     }
 

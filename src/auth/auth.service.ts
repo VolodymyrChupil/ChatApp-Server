@@ -8,7 +8,8 @@ import {
 import { PrismaService } from "src/prisma/prisma.service"
 import { MailService } from "src/mail/mail.service"
 import { JwtService } from "@nestjs/jwt"
-import { LoginBody } from "./auth.interface"
+import { LoginInterface } from "./auth.interface"
+import { ChangePasswordDto } from "./auth.dto"
 import { Request, Response } from "express"
 import * as bcrypt from "bcrypt"
 import { generateRandomNumber } from "src/utils/random.generator"
@@ -22,7 +23,7 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  async login(req: Request, res: Response, body: LoginBody) {
+  async login(req: Request, res: Response, body: LoginInterface) {
     const cookies = req.cookies
     const { username, password, verificationCode } = body
     if (!username || !password) {
@@ -54,16 +55,20 @@ export class AuthService {
     }
 
     if (!verificationCode) {
-      const code = generateRandomNumber(8)
-      const expires_at = addMinutes(new Date(), 5)
+      try {
+        const code = generateRandomNumber(8)
+        const expires_at = addMinutes(new Date(), 5)
 
-      await this.prisma.verificationCodes.update({
-        where: { user_id: foundUser.id },
-        data: { code, expires_at },
-      })
+        await this.prisma.verificationCodes.update({
+          where: { user_id: foundUser.id },
+          data: { code, expires_at },
+        })
 
-      this.mail.sendVerificationCode(foundUser.email, code)
-      return res.status(206).send("We send confirmation code on your email.")
+        this.mail.sendVerificationCode(foundUser.email, code)
+        return res.status(206).send("We send confirmation code on your email.")
+      } catch (err) {
+        return res.status(500).send(err.message)
+      }
     }
 
     const foundUserVerificationCode =
@@ -208,5 +213,69 @@ export class AuthService {
     })
 
     return res.json({ accessToken })
+  }
+
+  async changePassword(req: Request, res: Response, body: ChangePasswordDto) {
+    const { password, newPassword, verificationCode } = body
+    if (password === newPassword) {
+      throw new BadRequestException(
+        "New password can not be equal to the old password",
+      )
+    }
+
+    const foundUser = await this.prisma.users.findUnique({
+      where: { id: req.userId },
+    })
+    if (!foundUser) {
+      throw new UnauthorizedException()
+    }
+
+    const pwdMatch = await bcrypt.compare(password, foundUser.password)
+    if (!pwdMatch) {
+      throw new UnauthorizedException()
+    }
+
+    if (!verificationCode) {
+      try {
+        const code = generateRandomNumber(8)
+        const expires_at = addMinutes(new Date(), 5)
+
+        await this.prisma.verificationCodes.update({
+          where: { user_id: foundUser.id },
+          data: { code, expires_at },
+        })
+
+        this.mail.sendVerificationCode(foundUser.email, code)
+        return res.status(206).send("We send confirmation code on your email.")
+      } catch (err) {
+        return res.status(500).send(err.message)
+      }
+    }
+
+    const foundUserVerificationCode =
+      await this.prisma.verificationCodes.findUnique({
+        where: { user_id: foundUser.id },
+      })
+
+    if (isAfter(new Date(), foundUserVerificationCode.expires_at)) {
+      throw new RequestTimeoutException("Verification code expired")
+    }
+
+    if (foundUserVerificationCode.code !== verificationCode) {
+      throw new UnauthorizedException("Invalid credentials")
+    }
+
+    await this.prisma.verificationCodes.update({
+      where: { user_id: foundUser.id },
+      data: { code: null, expires_at: null },
+    })
+
+    const hashedPwd = await bcrypt.hash(newPassword, 10)
+    await this.prisma.users.update({
+      where: { id: foundUser.id },
+      data: { password: hashedPwd },
+    })
+
+    return res.sendStatus(200)
   }
 }

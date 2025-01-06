@@ -3,6 +3,8 @@ import {
   Length,
   IsNotEmpty,
   IsOptional,
+  IsEmail,
+  MaxLength,
 } from "class-validator"
 
 export class ChangePasswordDto {
@@ -15,4 +17,17 @@ export class ChangePasswordDto {
 
   @IsOptional()
   verificationCode: string
+}
+
+export class ResetPwdDto {
+  @IsOptional()
+  @Length(12, 64)
+  @IsStrongPassword()
+  newPassword: string
+}
+
+export class RequestResetPwdDto {
+  @MaxLength(64)
+  @IsEmail()
+  email: string
 }

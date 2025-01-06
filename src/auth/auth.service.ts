@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
   RequestTimeoutException,
   UnauthorizedException,
 } from "@nestjs/common"
@@ -9,9 +10,10 @@ import { PrismaService } from "src/prisma/prisma.service"
 import { MailService } from "src/mail/mail.service"
 import { JwtService } from "@nestjs/jwt"
 import { LoginInterface } from "./auth.interface"
-import { ChangePasswordDto } from "./auth.dto"
+import { ChangePasswordDto, ResetPwdDto, RequestResetPwdDto } from "./auth.dto"
 import { Request, Response } from "express"
 import * as bcrypt from "bcrypt"
+import * as crypto from "crypto"
 import { generateRandomNumber } from "src/utils/random.generator"
 import { addMinutes, isAfter } from "date-fns"
 
@@ -245,10 +247,10 @@ export class AuthService {
           data: { code, expires_at },
         })
 
-        this.mail.sendVerificationCode(foundUser.email, code)
+        this.mail.sendPasswordChange(foundUser.email, code)
         return res.status(206).send("We send confirmation code on your email.")
       } catch (err) {
-        return res.status(500).send(err.message)
+        return res.status(500).send(err?.message)
       }
     }
 
@@ -256,6 +258,10 @@ export class AuthService {
       await this.prisma.verificationCodes.findUnique({
         where: { user_id: foundUser.id },
       })
+
+    if (!foundUserVerificationCode) {
+      throw new NotFoundException()
+    }
 
     if (isAfter(new Date(), foundUserVerificationCode.expires_at)) {
       throw new RequestTimeoutException("Verification code expired")
@@ -277,5 +283,84 @@ export class AuthService {
     })
 
     return res.sendStatus(200)
+  }
+
+  async requestResetPassword(res: Response, body: RequestResetPwdDto) {
+    const { email } = body
+    const foundUser = await this.prisma.users.findUnique({ where: { email } })
+    if (!foundUser) {
+      throw new NotFoundException()
+    }
+
+    try {
+      const code = `${foundUser.id}${crypto.randomBytes(46).toString("hex")}`
+      const expires_at = addMinutes(new Date(), 10)
+
+      await this.prisma.verificationCodes.update({
+        where: { user_id: foundUser.id },
+        data: { code, expires_at },
+      })
+      this.mail.sendPasswordReset(email, code)
+
+      return res.status(206).send("We send confirmation letter on your email.")
+    } catch (err) {
+      return res.status(500).send(err?.message)
+    }
+  }
+
+  async resetPassword(code: string, body: ResetPwdDto) {
+    const { newPassword } = body
+    if (!code) {
+      throw new BadRequestException()
+    }
+
+    const userId = code.slice(0, 36)
+    const foundUser = await this.prisma.users.findUnique({
+      where: { id: userId },
+    })
+    if (!foundUser) {
+      throw new NotFoundException()
+    }
+
+    const foundUserVerificationCode =
+      await this.prisma.verificationCodes.findUnique({
+        where: { user_id: userId },
+      })
+
+    if (!foundUserVerificationCode) {
+      throw new NotFoundException()
+    }
+
+    if (isAfter(new Date(), foundUserVerificationCode.expires_at)) {
+      throw new RequestTimeoutException("Verification code expired")
+    }
+
+    if (foundUserVerificationCode.code !== code) {
+      throw new UnauthorizedException("Invalid credentials")
+    }
+
+    if (!newPassword) {
+      //redirect to client side
+      throw new BadRequestException("Provide a new password")
+    }
+
+    if (bcrypt.compareSync(newPassword, foundUser.password)) {
+      throw new BadRequestException(
+        "New password can not be equal to the old password",
+      )
+    }
+
+    await this.prisma.verificationCodes.update({
+      where: { user_id: userId },
+      data: { code: null, expires_at: null },
+    })
+
+    const hashedPwd = await bcrypt.hash(newPassword, 10)
+    await this.prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedPwd },
+    })
+
+    return "Success password reseted"
   }
 }

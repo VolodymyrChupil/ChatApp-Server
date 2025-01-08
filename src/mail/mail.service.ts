@@ -16,7 +16,7 @@ export class MailService {
       from: `ChatApp <${process.env.EMAIL_ADDRESS}>`,
       to: email,
       subject: "Email Confirmation",
-      html: emailConfirmationTmp(email, code),
+      html: emailConfirmationTmp(code),
     })
   }
 
@@ -25,7 +25,7 @@ export class MailService {
       from: `ChatApp <${process.env.EMAIL_ADDRESS}>`,
       to: email,
       subject: "Verification Code",
-      html: verificationCodeTmp(email, code),
+      html: verificationCodeTmp(code),
     })
   }
 
@@ -34,7 +34,7 @@ export class MailService {
       from: `ChatApp <${process.env.EMAIL_ADDRESS}>`,
       to: email,
       subject: "Password Change",
-      html: passwordChangeTmp(email, code),
+      html: passwordChangeTmp(code),
     })
   }
 
@@ -43,7 +43,7 @@ export class MailService {
       from: `ChatApp <${process.env.EMAIL_ADDRESS}>`,
       to: email,
       subject: "Password Reset",
-      html: passwordResetTmp(email, code),
+      html: passwordResetTmp(code),
     })
   }
 }

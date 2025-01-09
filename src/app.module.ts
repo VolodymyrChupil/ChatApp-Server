@@ -7,16 +7,16 @@ import {
 import { AppController } from "./app.controller"
 import { AppService } from "./app.service"
 import { PrismaModule } from "./prisma/prisma.module"
-import { LoggerMiddleware } from "./logger/logger.middleware"
+import { LoggerMiddleware } from "./common/middleware/logger.middleware"
 import { ConfigModule } from "@nestjs/config"
 import { RegisterModule } from "./register/register.module"
 import { MailModule } from "./mail/mail.module"
 import { MailerModule } from "@nestjs-modules/mailer"
 import { AuthModule } from "./auth/auth.module"
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler"
-import { APP_GUARD } from "@nestjs/core"
+import { APP_GUARD, APP_FILTER } from "@nestjs/core"
 import { JwtModule } from "@nestjs/jwt"
-
+import { GlobalExceptionFilter } from "./common/filters/global-exception.filter"
 @Module({
   imports: [
     PrismaModule,
@@ -34,6 +34,10 @@ import { JwtModule } from "@nestjs/jwt"
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
     },
   ],
 })

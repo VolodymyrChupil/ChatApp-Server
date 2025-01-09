@@ -58,7 +58,7 @@ export class AuthService {
 
     if (!verificationCode) {
       try {
-        const code = generateRandomNumber(8)
+        const code = generateRandomNumber(6)
         const expires_at = addMinutes(new Date(), 5)
 
         await this.prisma.verificationCodes.update({
@@ -77,6 +77,10 @@ export class AuthService {
       await this.prisma.verificationCodes.findUnique({
         where: { user_id: foundUser.id },
       })
+
+    if (!foundUserVerificationCode) {
+      throw new NotFoundException()
+    }
 
     if (isAfter(new Date(), foundUserVerificationCode.expires_at)) {
       throw new RequestTimeoutException("Verification code expired")
@@ -239,7 +243,7 @@ export class AuthService {
 
     if (!verificationCode) {
       try {
-        const code = generateRandomNumber(8)
+        const code = generateRandomNumber(6)
         const expires_at = addMinutes(new Date(), 5)
 
         await this.prisma.verificationCodes.update({

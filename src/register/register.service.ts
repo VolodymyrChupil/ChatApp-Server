@@ -20,7 +20,6 @@ export class RegisterService {
 
   async createUser(body: CreateUserDTO) {
     const { username, email, password } = body
-
     const duplicateEmail = await this.prisma.users.findUnique({
       where: { email },
     })

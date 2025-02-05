@@ -6,8 +6,8 @@ import { Request } from "express"
 export class AppService {
   constructor(private readonly prisma: PrismaService) {}
 
-  getHello(): string {
-    return "Hello World!"
+  getInfo(): string {
+    return "ChatApp API"
   }
 
   async protected(req: Request) {

@@ -60,7 +60,7 @@ export class AuthController {
     return this.authService.requestResetPassword(res, body)
   }
 
-  @Get("reset-pwd/:code")
+  @Post("reset-pwd/:code")
   resetPassword(
     @Param("code") code: string,
     @Body(ValidationPipe) body: ResetPwdDto,

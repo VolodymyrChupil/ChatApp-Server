@@ -17,6 +17,7 @@ import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler"
 import { APP_GUARD, APP_FILTER } from "@nestjs/core"
 import { JwtModule } from "@nestjs/jwt"
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter"
+
 @Module({
   imports: [
     PrismaModule,

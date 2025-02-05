@@ -27,7 +27,7 @@ export function emailConfirmationTmp(code: string) {
                      <td style="padding: 10px; font-family: Arial, sans-serif; font-size: 18px;">
                         <p>
                            Thank you for registering on our website.
-                          To confirm your email follow this <a href="${process.env.SERVER_URL}/register/${code}">link</a>
+                           To confirm your email follow this <a href="${process.env.SERVER_URL}/register/${code}">link</a>
                         </p>
                         <p>
                             If you did not registered on our website disregard this email.</b>
@@ -75,7 +75,7 @@ export function verificationCodeTmp(code: string) {
                         </p>
                         <p style="margin: 15px 0; font-weight: 600;">${code}</p>
                         <p>
-                           Did you receive this email without having an active request from 2FA to enter a verification code? If so, the security of your 2FA account may be compromised. Please <b>change your password as soon as possible.</b>
+                           Did you receive this email without having an active request from ChatApp to enter a verification code? If so, the security of your ChatApp account may be compromised. <b>Change your password as soon as possible.</b>
                         </p>
                         <p>Sincerely, ChatApp.</p>
                      </td>
@@ -159,10 +159,10 @@ export function passwordResetTmp(code: string) {
                   <tr>
                      <td style="padding: 10px; font-family: Arial, sans-serif; font-size: 18px;">
                         <p>
-                           We received a request to reset the password for your account.  If you made this request, please follow the instructions below to reset your password. If you did not request a password reset, please disregard this email or contact our support team for assistance.
+                           We received a request to reset the password for your account.  If you made this request, follow the instructions below to reset your password. If you did not request a password reset, disregard this email.
                         </p>
                         <p>
-                           To reset your password, please follow this <a href="${process.env.SERVER_URL}/auth/reset-pwd/${code}">link</a>
+                           To reset your password, follow this <a href="${process.env.CLIENT_URL}/reset-pwd?code=${code}">link</a>
                         </p>
                         <p>Sincerely, ChatApp.</p>
                      </td>

@@ -20,7 +20,6 @@ export class ChangePasswordDto {
 }
 
 export class ResetPwdDto {
-  @IsOptional()
   @Length(12, 64)
   @IsStrongPassword()
   newPassword: string

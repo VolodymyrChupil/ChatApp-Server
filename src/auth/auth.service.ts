@@ -29,9 +29,7 @@ export class AuthService {
     const cookies = req.cookies
     const { username, password, verificationCode } = body
     if (!username || !password) {
-      throw new BadRequestException(
-        "You must provide username and password to log in",
-      )
+      throw new BadRequestException("You must provide username and password")
     }
 
     const foundUser = await this.prisma.users.findUnique({
@@ -51,9 +49,7 @@ export class AuthService {
         foundUser.email,
         foundUser.email_confirmation_code,
       )
-      throw new BadRequestException(
-        "You must confirm your email to log in! Check your email.",
-      )
+      throw new BadRequestException("You must confirm your email to log in!")
     }
 
     if (!verificationCode) {
@@ -67,7 +63,7 @@ export class AuthService {
         })
 
         this.mail.sendVerificationCode(foundUser.email, code)
-        return res.status(206).send("We send confirmation code on your email.")
+        return res.status(206).send("We send verification code on your email.")
       } catch (err) {
         return res.status(500).send(err.message)
       }
@@ -322,6 +318,7 @@ export class AuthService {
     const foundUser = await this.prisma.users.findUnique({
       where: { id: userId },
     })
+
     if (!foundUser) {
       throw new NotFoundException()
     }
@@ -341,11 +338,6 @@ export class AuthService {
 
     if (foundUserVerificationCode.code !== code) {
       throw new UnauthorizedException("Invalid credentials")
-    }
-
-    if (!newPassword) {
-      //redirect to client side
-      throw new BadRequestException("Provide a new password")
     }
 
     if (bcrypt.compareSync(newPassword, foundUser.password)) {

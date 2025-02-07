@@ -8,6 +8,7 @@ import {
   UseGuards,
   ValidationPipe,
   Param,
+  Patch,
 } from "@nestjs/common"
 import { AuthService } from "./auth.service"
 import { LoginInterface } from "./auth.interface"
@@ -60,7 +61,7 @@ export class AuthController {
     return this.authService.requestResetPassword(res, body)
   }
 
-  @Post("reset-pwd/:code")
+  @Patch("reset-pwd/:code")
   resetPassword(
     @Param("code") code: string,
     @Body(ValidationPipe) body: ResetPwdDto,

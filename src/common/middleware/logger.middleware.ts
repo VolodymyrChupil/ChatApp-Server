@@ -8,13 +8,17 @@ import { format } from "date-fns"
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    const dirPath = path.join(process.cwd(), "logs")
+  async use(req: Request, res: Response, next: NextFunction) {
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = date.toLocaleString("en-US", { month: "long" })
+
+    const dirPath = path.join(process.cwd(), "logs", `${year}`, `${month}`)
     if (!fs.existsSync(dirPath)) {
-      fsP.mkdir(dirPath)
+      await fsP.mkdir(dirPath, { recursive: true })
     }
 
-    const fileName = `${format(new Date(), "dd-MM-yyyy")}`
+    const fileName = `${format(date, "dd-MM-yyyy")}`
     const logStream = fs.createWriteStream(
       path.join(dirPath, `${fileName}.log`),
       {

@@ -17,6 +17,7 @@ import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler"
 import { APP_GUARD, APP_FILTER } from "@nestjs/core"
 import { JwtModule } from "@nestjs/jwt"
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter"
+import { ProfileModule } from "./profile/profile.module"
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { GlobalExceptionFilter } from "./common/filters/global-exception.filter"
     AuthModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     JwtModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [
